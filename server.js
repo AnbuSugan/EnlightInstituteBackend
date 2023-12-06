@@ -4,6 +4,7 @@ import cors from "cors";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
 import cookieParser from "cookie-parser";
+
 const salt = 10;
 
 const app = express();
@@ -14,7 +15,7 @@ app.use(cookieParser());
 const db = mysql.createConnection({
   host: "localhost",
   user: "root",
-  password: "Anbu1995@",
+  password: "Arasu1995@",
   database: "register",
 });
 
@@ -54,29 +55,44 @@ app.post("/createUser", (req, res) => {
 
 // login
 
-app.post("/create", (req, res) => {
-  const sql = "SELECT * FROM registers WHERE userName,password  = ?";
-  db.query(sql, [req.body.userName], (err, data) => {
-    if (err) return res.json({ Error: "Login error in server" });
-    if (data.length > 0) {
-      bcrypt.compare(
-        req.body.password.toString(),
-        data[0].password,
-        (err, response) => {
-          if (err) return res.json({ Error: "Password compare error" });
-          if (response) {
-            return res.json({ Status: "Success" });
+app.post('/login', (req, res) => {
+    const sql = 'SELECT * FROM registers WHERE userName = ?';
+  
+    db.query(sql, [req.body.userName], async (err, data) => {
+      if (err) {
+        console.error('Login error in server:', err);
+        return res.status(500).json({ Error: 'Internal Server Error' });
+      }
+  
+      if (data.length > 0) {
+        try {
+          const isPasswordValid = await bcrypt.compare(
+            req.body.password.toString(),
+            data[0].password
+          );
+  
+          if (isPasswordValid) {
+         
+            return res.json({ Status: 'Success' });
           } else {
-            alert("password does not matched");
-            return res.json({ Error: "Password not matched" });
+            return res.status(401).json({ Error: 'Invalid password' });
           }
+        } catch (error) {
+          console.error('Password compare error:', error);
+          return res.status(500).json({ Error: 'Internal Server Error' });
         }
-      );
-    } else {
-      return res.json({ Error: "No email existed" });
-    }
+      } else {
+        return res.status(404).json({ Error: 'User not found' });
+      }
+    });
   });
-});
+
+
+
+
+
+
+
 
 app.listen(3300, () => {
   console.log("Listening");
