@@ -26,6 +26,7 @@ db.connect((err) => {
   }
 });
 
+// Register
 app.post("/createUser", (req, res) => {
   const sql = "INSERT INTO registers SET?";
   bcrypt.hash(req.body.password.toString(), salt, (err, hash) => {
@@ -40,13 +41,40 @@ app.post("/createUser", (req, res) => {
       state: req.body.state,
       zip: req.body.zip,
       userName: req.body.userName,
-      hash,
+
+      password: hash,
     };
 
     db.query(sql, [values], (err, result) => {
       if (err) throw err;
       return res.json(result);
     });
+  });
+});
+
+// login
+
+app.post("/create", (req, res) => {
+  const sql = "SELECT * FROM registers WHERE userName,password  = ?";
+  db.query(sql, [req.body.userName], (err, data) => {
+    if (err) return res.json({ Error: "Login error in server" });
+    if (data.length > 0) {
+      bcrypt.compare(
+        req.body.password.toString(),
+        data[0].password,
+        (err, response) => {
+          if (err) return res.json({ Error: "Password compare error" });
+          if (response) {
+            return res.json({ Status: "Success" });
+          } else {
+            alert("password does not matched");
+            return res.json({ Error: "Password not matched" });
+          }
+        }
+      );
+    } else {
+      return res.json({ Error: "No email existed" });
+    }
   });
 });
 
